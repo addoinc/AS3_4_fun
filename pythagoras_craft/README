@@ -1,0 +1,18 @@
+=============
+  pythagoras_craft - 
+     A small program and associated commands for building an AS3 program on GNU/Linux using the Flex SDK
+=============
+
+1) This a small AS3 program that prints a blue Circle(which I refer to as kpax) and a smaller green square(which I refer to as SpaceCraft).
+As we drag SpaceCraft the event handler calls a function that calculates and prints the distance(in pixels) between kpax and SpaceCraft in the textField. This distance is calculated using the Pythagoras' theorem.
+
+2) To build the program:
+
+$ ~/flex_sdk_base/bin/mxmlc ./Craft.as
+Loading configuration file /home/mrblue/flex_sdk_base/frameworks/flex-config.xml
+/home/mrblue/fun/as/AS3_4_fun/pythagoras_craft/Craft.swf (1390 bytes)
+
+3) To run the program:
+$ ~/flex_sdk_base/player/flashplayer ./Craft.swf 
+
+~/flex_sdk_base -- Is the path where I have installed the Flex SDK, which can be downloaded from --> http://opensource.adobe.com/wiki/display/flexsdk/Download+Flex+3

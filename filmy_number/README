@@ -1,0 +1,19 @@
+==========
+	filmy_number -- A flash based AS3 charting component, begin developed intially for the fimlynumber project
+==========
+
+MODIFCATIONS/ADDITIONS ARE ON OPEN SOURCE CODE OBTAINED FROM THE AXIIS PROJECT.
+ALL DERIVED WORK IS DISTRIBUTED UNDER THE ORIGINAL LICENSING/COPYRIGHT TERMS.
+
+Build requirements: 
+ 1) flex3 sdk
+ 2) Degrafa actionscript 3 Library
+ 3) Axiis actionscript 3 Library
+
+To build:
+$ ~/flex3/bin/mxmlc -compiler.include-libraries libs/ -- Filmy.mxml
+Loading configuration file /home/mrblue/flex3/frameworks/flex-config.xml
+/home/mrblue/fun/as/AS3_4_fun/filmy_number/Filmy.swf (579606 bytes)
+$
+
+This component connects to http://filmynumber.in/movies/series.csv to get the data series that is plotted on the graph.

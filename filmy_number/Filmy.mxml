@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    MODIFCATIONS/ADDITIONS BY RAGHURAM @ HIGHONRAILS BASED ON OPEN SOURCE CODE
+    OBTAINED FROM THE AXIIS PROJECT. ALL DERIVED WORK IS DISTRIBUTED UNDER THE
+    ORIGINAL LICENSING/COPYRIGHT TERMS.
+        
+    *** Original Copyright follows ***
+    
+    Copyright (c) 2009 Team Axiis
+    
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following
+    conditions:
+    
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:charts="org.axiis.charts.*"
+		layout="absolute" backgroundGradientColors="[0xDDDDDD,0xF5F5F5]" creationComplete="start();"
+		xmlns:axiis="http://www.axiis.org/2009" xmlns:series="org.axiis.charts.series.*" 
+		xmlns:groupings="org.axiis.charts.groupings.*" xmlns:degrafa="http://www.degrafa.com/2007"
+		xmlns:states="org.axiis.states.*" xmlns:paint="org.axiis.paint.*" xmlns:Layout="Layout.*"
+		xmlns:axis="org.axiis.charts.axis.*" xmlns:labels="org.axiis.charts.labels.*"
+		xmlns:utils="org.axiis.utils.*">
+  
+  <mx:Style source="styles/Filmy.css"/>
+	
+  <mx:Script>
+    <![CDATA[
+    import org.axiis.data.DataSet;
+    import mx.rpc.events.ResultEvent;
+    import mx.controls.Alert;
+    import flash.external.ExternalInterface;
+    import flash.external.*;
+    
+    private var ds:DataSet = new DataSet();
+
+    [Bindable]
+    private var movie_id:String = new String();
+
+    [Bindable]
+    private var movie_name:String = new String();
+
+    public function start():void {
+        movie_id = ""; movie_name = ""; 
+        ExternalInterface.addCallback("getMovieStats", getMovieStats);
+        analyticsRequest.addEventListener("result", handleMovieAnalytics);
+        analyticsRequest.send();
+    }
+
+    public function getMovieStats(movie_id:String):void {
+        this.movie_id = movie_id;
+        analyticsRequest.send();
+    }
+
+    public function getCurrentMovieName():void {
+        this.movie_name = ExternalInterface.call("window.parent.get_movie_name", null);
+    }
+
+    private function handleMovieAnalytics(event:mx.rpc.events.ResultEvent):void {
+        payload = event.result.toString();
+        ds.processCsvAsTable(payload, false);
+        ds.pivotTable(0);
+        dataProvider = ds.data.pivot.rows;
+        //hScale.dataProvider=ds.data.pivot.header.slice(1,dataSlice.value+1);
+        hScale.dataProvider=ds.data.pivot.header.slice(1,220+1);
+        hAxis.invalidateDataProvider();
+        dc.invalidateDisplayList();
+        getCurrentMovieName();
+        background.subTitle = this.movie_name;
+    }
+
+    private function sliceData():void {
+        //hScale.dataProvider=ds.data.pivot.header.slice(1,dataSlice.value+1);
+        hScale.dataProvider=ds.data.pivot.header.slice(1,220+1);
+	hAxis.invalidateDataProvider();
+	myLineGroup.invalidateDataProvider();
+	dc.invalidateDisplayList(); 
+    }
+    
+    private function axisLabel(obj:Object):String {
+        return (0.25 * Math.round(Number(obj) / 0.25)).toString();
+    }
+
+    private function filterColumns(obj:Object):Boolean {
+	//Don't want filter fields, trim columns
+	//if (obj.index < 1 || obj.index > dataSlice.value)
+        if (obj.index < 1 || obj.index > 220)
+	    return false;
+	else
+	    return true;
+    }
+
+    private function filterRows(obj:Object):Boolean {
+        return true;
+    }
+    ]]>
+  </mx:Script>
+  
+  <Layout:Background id="background" width="100%" height="100%" title="Viewability Scores" subTitle="{this.movie_name}" />
+  
+  <mx:String id="payload" />
+   
+  <!--  GLOBAL VARIABLES -->
+  <mx:Object id="dataProvider"/>
+  <mx:String id="verticalField"/>
+  <mx:Number id="percentGap">.02</mx:Number>
+  
+  <!--  EXPRESSIONS -->
+  <utils:NumericExpression id="tension" value="{35/210}"
+			   valueChanged="{if (myLineGroup) dc.invalidateDisplayList();}"/>
+  
+  <!-- CHART -->
+  <axiis:LinearScale id="vScale" dataProvider="{dataProvider}" minLayout="0" maxLayout="{myLineGroup.height}"	/>
+  
+  <axiis:CategoricalScale id="hScale" minLayout="0" maxLayout="{myLineGroup.width}" />
+  
+  <axiis:DataCanvas width="80%" id="dc" top="120" bottom="100" horizontalCenter="0"
+		    strokes="{strokes}" fills="{fills}" palettes="{palettes}" showDataTips="true">
+    
+    <!-- Background -->
+    <axiis:backgroundGeometries>
+      
+      <axis:VAxis id="vAxis" verticalScale="{vScale}" tickStroke="{axisStroke}" width="{dc.width}"
+		  height="{myLineGroup.height}" showDataTips="false" fontFamily="Myriad Pro" fontColor="0"
+		  fontSize="10" tickGap="5" majorTickSpacing="50" labelFunction="{axisLabel}"/>
+      
+      <axiis:HCategoryAxis id="hAxis" x="{myLineGroup.x}" categoryScale="{this.hScale}" width="{myLineGroup.width}"
+			   dataProvider="{hScale.dataProvider}" height="50" y="{myLineGroup.height}" labelRotation="90" />
+      
+      <degrafa:Line x="0" x1="{myLineGroup.x+myLineGroup.width}" y="{myLineGroup.height}"
+		    y1="{myLineGroup.height}" stroke="{axisStroke}"/>
+      
+    </axiis:backgroundGeometries>
+    
+    <!-- Layouts -->
+    <axiis:layouts>
+      <groupings:LineSeriesGroup id="myLineGroup" x="12" y="0" height="{dc.height-70}" width="{dc.width}"
+				 tension="{tension.value}" markerColor="{areaPalette.currentColor}"
+				 dataFilterFunction="{filterRows}" showArea="true"
+				 plotFilterFunction="{filterColumns}" markerSize="8" showMarker="true"
+				 mode="{int(LineSeriesGroup.MODE_BASELINE)}" dataProvider="{dataProvider}"
+				 plotCollection="columns" dataField="value" labelField="pivotName" xDataField="name"
+				 plotLabelField="name" verticalScale="{vScale}" horizontalScale="{hScale}"
+				 stroke="{myStroke}" fill="{areaFill}" enableRollOver="true"/>
+    </axiis:layouts>
+    
+  </axiis:DataCanvas>
+  
+  <!--  FILLS & STROKES -->
+  <mx:Array id="palettes">
+    <paint:LayoutAutoPalette id="outerPalette" layout="{myLineGroup}" colorFrom="0xCC3333" colorTo="0x3333CC"/>
+    <paint:LayoutAutoPalette id="clusterPalette" layout="{myLineGroup}"
+			     colorFrom="{outerPalette.currentColor}" colorTo="{outerPalette.currentColor | 0x337f00}"/>
+    <paint:LayoutAutoPalette id="areaPalette" layout="{myLineGroup}" colorFrom="0x3333CC" colorTo="0xCC3333"/>
+  </mx:Array>
+  
+  <mx:Array id="fills">
+    <degrafa:LinearGradientFill id="areaFill" angle="90" enableEvents="false">
+      <degrafa:GradientStop color="{areaPalette.currentColor}" alpha=".95"/>
+      <degrafa:GradientStop color="{areaPalette.currentColor | 0x999933}" alpha=".65"/>
+    </degrafa:LinearGradientFill>
+    <degrafa:LinearGradientFill id="clusterFill" angle="45" enableEvents="false">
+      <degrafa:GradientStop color="{clusterPalette.currentColor}"/>
+      <degrafa:GradientStop color="{clusterPalette.currentColor | 0xFFFFFF}" alpha=".85"/>
+    </degrafa:LinearGradientFill>
+  </mx:Array>
+  
+  <mx:Array id="strokes">
+    
+    <degrafa:LinearGradientStroke id="colStroke" pixelHinting="true" angle="45" enableEvents="false">
+      <degrafa:GradientStop color="0xFFFFFF" alpha=".7"/>
+      <degrafa:GradientStop color="0xFFFFFF" alpha=".3"/>
+    </degrafa:LinearGradientStroke>
+    <degrafa:SolidStroke color="0xFFFFFF" alpha=".3"/>
+    <degrafa:SolidStroke color="0x222222" id="axisStroke" pixelHinting="true"/>
+    <degrafa:SolidStroke color="{areaPalette.currentColor}" id="myStroke" weight="1"
+			 alpha="1" caps="none" pixelHinting="true"/>
+  </mx:Array>
+  
+  <!-- DISPLAY OBJECTS -->
+  <!--  
+  <mx:HBox id="myBox" bottom="50" horizontalCenter="0">
+    
+    <mx:HBox>
+      <mx:Label text="Line Curve" textAlign="right" verticalCenter="0"/>
+      <mx:HSlider width="80" id="slider" minimum="1" maximum="80" value="35"
+		  liveDragging="true" showTrackHighlight="false" verticalCenter="-5" />
+    </mx:HBox>
+    
+    <mx:Label text="|"/>
+    
+    <mx:HBox>
+      <mx:Label text="% Data" textAlign="right" verticalCenter="0"/>
+      <mx:HSlider width="80" id="dataSlice" minimum="3" maximum="220"
+		  value="30" snapInterval="1" change="{sliceData();}"
+		  showTrackHighlight="false" verticalCenter="-5"/>
+    </mx:HBox>
+    
+    <mx:HBox>
+      <mx:Label text="Label Rotation" textAlign="right" verticalCenter="0"/>
+      <mx:HSlider width="80" id="labelRotate" minimum="0" maximum="90"
+		  value="0" snapInterval="1" 
+		  change="{hAxis.labelRotation=labelRotate.value;dc.invalidateDisplayList();}"
+		  showTrackHighlight="false" verticalCenter="-5"/>
+    </mx:HBox>
+    
+    <mx:Label text="|"/>
+    
+    <mx:HBox>
+      <mx:Label text="Area" textAlign="right" verticalCenter="0"/>
+      <mx:CheckBox id="area" change="{dc.invalidateDisplayList();}" selected="true"/>
+    </mx:HBox>
+    
+    <mx:Label text="|"/>
+    
+    <mx:HBox>
+      <mx:Label text="Marker" textAlign="right" verticalCenter="0"/>
+      <mx:CheckBox id="showMarker" change="{dc.invalidateDisplayList();}"/>
+    </mx:HBox>
+    
+    <mx:Label text="|"/>
+    
+    <mx:Spacer width="20"/>
+    <mx:HBox>
+      <mx:RadioButtonGroup id="layoutGroup" change="{dc.invalidateDisplayList();}"/>
+      <mx:RadioButton label="Overlay" group="{layoutGroup}" value="{LineSeriesGroup.MODE_BASELINE}" selected="true"/>
+      <mx:RadioButton label="Stack" group="{layoutGroup}" value="{LineSeriesGroup.MODE_STACK_ZERO}"/>
+      <mx:RadioButton label="Flow" group="{layoutGroup}" value="{LineSeriesGroup.MODE_STACK_FLOW}"/>
+    </mx:HBox>
+    
+  </mx:HBox>
+  -->
+
+  <mx:HTTPService id="analyticsRequest" url="http://filmynumber.in/movies/series.csv"
+		  useProxy="false" method="GET" resultFormat="text">
+    <mx:request xmlns="">
+      <movie_id>{this.movie_id}</movie_id>
+    </mx:request>
+  </mx:HTTPService>
+
+
+</mx:Application>
